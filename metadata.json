@@ -1,0 +1,8 @@
+{
+  "name": "2509 V6 NEW POWER NANO BANANA",
+  "description": "A professional AI image generator to create and edit images with powerful AI models. Describe your idea and let the AI bring it to life, generate stickers, logos, and more.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
