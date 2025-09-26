@@ -26,10 +26,28 @@ import FabricEditor from './components/editor/FabricEditor';
 import ConsultantChatPanel from './components/panels/ConsultantChatPanel';
 import ConversationalAgentPanel from './components/panels/ConversationalAgentPanel';
 
-const compositionPlaceholders: Record<string, string> = {
-  clothing: "Ex: 'fundo de estúdio com luz suave', 'em uma rua de Tóquio à noite com neon', 'cenário urbano chuvoso'",
-  tattoo: "Ex: 'estilo de aquarela com cores vibrantes', 'fazer a tatuagem parecer um pouco desbotada', 'adicionar sombreado suave'",
-  decorator: "Ex: 'iluminação de fim de tarde', 'colocar um tapete persa embaixo do sofá', 'mudar o piso para madeira'"
+const compositionPlaceholders: Record<string, string[]> = {
+  clothing: [
+    "Ex: 'fundo de estúdio com luz suave'",
+    "Ex: 'em uma rua de Tóquio à noite com neon'",
+    "Ex: 'cenário urbano chuvoso'",
+    "Ex: 'pose de passarela, caminhando em direção à câmera'",
+    "Ex: 'sentada em um café parisiense'"
+  ],
+  tattoo: [
+    "Ex: 'estilo de aquarela com cores vibrantes'",
+    "Ex: 'fazer a tatuagem parecer um pouco desbotada'",
+    "Ex: 'adicionar sombreado suave ao redor'",
+    "Ex: 'tatuagem em estilo blackwork, linhas fortes'",
+    "Ex: 'realista, com detalhes finos'"
+  ],
+  decorator: [
+    "Ex: 'iluminação de fim de tarde, luz dourada'",
+    "Ex: 'colocar um tapete persa embaixo do sofá'",
+    "Ex: 'mudar o piso para madeira de carvalho'",
+    "Ex: 'adicionar uma planta grande (monstera) no canto'",
+    "Ex: 'estilo minimalista, cores neutras'"
+  ]
 };
 
 // Fix: Removed API Key management from UI, per coding guidelines.
@@ -39,6 +57,7 @@ const App: React.FC = () => {
   const [editFunction, setEditFunction] = useState<EditFunction | null>(null);
   const [prompt, setPrompt] = useState('');
   const [optionalPromptDetails, setOptionalPromptDetails] = useState('');
+  const [dynamicPlaceholder, setDynamicPlaceholder] = useState('');
 
   // Carousel State
   const [isCarouselMode, setIsCarouselMode] = useState(false);
@@ -174,6 +193,31 @@ const App: React.FC = () => {
     ? editHistory[historyIndex]
     : null;
 
+  useEffect(() => {
+    let intervalId: number | undefined;
+
+    if (editFunction && ['clothing', 'decorator', 'tattoo'].includes(editFunction)) {
+      const placeholders = compositionPlaceholders[editFunction];
+      if (placeholders && placeholders.length > 0) {
+        let currentIndex = 0;
+        setDynamicPlaceholder(placeholders[currentIndex]);
+
+        intervalId = window.setInterval(() => {
+          currentIndex = (currentIndex + 1) % placeholders.length;
+          setDynamicPlaceholder(placeholders[currentIndex]);
+        }, 3000); // Change every 3 seconds
+      }
+    } else {
+      setDynamicPlaceholder("Adicione detalhes extras para a IA...");
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [editFunction]);
+  
   const getImageDimensions = useCallback((imageData: ImageData): Promise<{width: number; height: number}> => {
       return new Promise((resolve, reject) => {
           const img = new Image();
@@ -2165,7 +2209,7 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
                                 id="optional-prompt-clothing"
                                 value={optionalPromptDetails}
                                 onChange={(e) => setOptionalPromptDetails(e.target.value)}
-                                placeholder={compositionPlaceholders.clothing}
+                                placeholder={dynamicPlaceholder}
                                 className="mt-1 w-full h-20 bg-primary-bg border border-glass-border rounded-lg p-2 text-text-primary resize-none focus:outline-none focus:border-accent-start focus:ring-2 focus:ring-accent-start/50"
                             />
                         </div>
@@ -2228,7 +2272,7 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
                                 id="optional-prompt-details"
                                 value={optionalPromptDetails}
                                 onChange={(e) => setOptionalPromptDetails(e.target.value)}
-                                placeholder={compositionPlaceholders[editFunction] || "Adicione detalhes extras para a IA..."}
+                                placeholder={dynamicPlaceholder}
                                 className="mt-1 w-full h-20 bg-primary-bg border border-glass-border rounded-lg p-2 text-text-primary resize-none focus:outline-none focus:border-accent-start focus:ring-2 focus:ring-accent-start/50"
                             />
                         </div>
