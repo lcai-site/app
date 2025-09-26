@@ -592,7 +592,7 @@ const App: React.FC = () => {
     }
   
     const prompts = {
-      'remove-background': `TAREFA CRÍTICA: Remoção de Fundo com Transparência. Isole o objeto/assunto principal da imagem com a máxima precisão. Remova completamente o fundo, tornando-o transparente (canal alfa). O assunto principal deve permanecer completamente inalterado, com bordas perfeitas e suaves. O resultado final deve ser uma imagem PNG com fundo transparente.`,
+      'remove-background': `INSTRUÇÃO DIRETA PARA IA: Remova o fundo da imagem. O resultado DEVE ser um arquivo PNG com um fundo totalmente transparente (canal alfa). NÃO adicione nenhuma cor, sombra ou novo fundo. Apenas o objeto principal deve permanecer, com bordas limpas e precisas, sobre um fundo transparente.`,
       'enhance': "Enhance this image: perform upscaling for higher resolution, improve sharpness and detail, correct colors and lighting to be more vibrant and balanced, and remove any noise or artifacts. The result should be a professional, high-quality version of the original photo."
     };
   
