@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { BrandIdentity, ImageData } from '../../types';
 import { FONT_OPTIONS } from '../../constants';
 import UploadArea from '../ui/UploadArea';
-import { fileToBase64 } from '../../services/geminiService';
+import { fileToBase64 } from '../../utils';
 
 const SettingsModal: React.FC<{
     isOpen: boolean;

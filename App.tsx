@@ -2,10 +2,10 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { AppMode, CreateFunction, EditFunction, ImageData, Size, ArtStyle, BrandIdentity, ContentAssistantData, MarketingPersona, CustomSpeechRecognition, SpeechRecognitionEvent, EditedImage, CarouselPlan, ConsultantPersona, ConsultantMessage, ConciergeMessage, AspectRatio } from './types';
 import type { Chat } from '@google/genai';
 // Fix: Import `fileToBase64` to resolve 'Cannot find name' errors.
-import { generateImage, editImage, composeImages, generateText, analyzeImageForContent, describeImage, fileToBase64, generateCarouselPlan, startConsultantChat, startConciergeChat } from './services/geminiService';
+import { generateImage, editImage, composeImages, generateText, analyzeImageForContent, describeImage, generateCarouselPlan, startConsultantChat, startConciergeChat } from './services/geminiService';
 import JSZip from 'jszip';
 import { ART_STYLES, SIZES } from './constants';
-import { applyLogoOverlay, base64ToBlob, prepareImageForOutpainting, renderTextToImage, resizeAndCropImage, flattenImageWithText, speak } from './utils';
+import { applyLogoOverlay, base64ToBlob, prepareImageForOutpainting, renderTextToImage, resizeAndCropImage, flattenImageWithText, speak, fileToBase64 } from './utils';
 import { useVoiceAgent } from './hooks/useVoiceAgent';
 
 import FunctionCard from './components/ui/FunctionCard';
