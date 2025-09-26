@@ -2,6 +2,20 @@ import { GoogleGenAI, Modality, Type } from "@google/genai";
 import type { GenerateContentResponse, Chat } from "@google/genai";
 import type { AspectRatio, ContentAssistantData, MarketingPersona, EditedImage, CarouselPlan, ConsultantPersona } from "../types";
 
+// Fix: Add and export fileToBase64 to resolve import errors.
+export const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            const result = reader.result as string;
+            // Remove 'data:mime/type;base64,' prefix
+            resolve(result.split(',')[1]);
+        };
+        reader.onerror = error => reject(error);
+    });
+};
+
 export const generateText = async (apiKey: string, prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey });
   try {

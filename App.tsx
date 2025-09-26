@@ -2,10 +2,10 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { AppMode, CreateFunction, EditFunction, ImageData, Size, ArtStyle, BrandIdentity, ContentAssistantData, MarketingPersona, CustomSpeechRecognition, SpeechRecognitionEvent, EditedImage, CarouselPlan, ConsultantPersona, ConsultantMessage, ConciergeMessage, AspectRatio } from './types';
 import type { Chat } from '@google/genai';
 // Fix: Import `fileToBase64` to resolve 'Cannot find name' errors.
-import { generateImage, editImage, composeImages, generateText, analyzeImageForContent, describeImage, generateCarouselPlan, startConsultantChat, startConciergeChat } from './services/geminiService';
+import { generateImage, editImage, composeImages, generateText, analyzeImageForContent, describeImage, fileToBase64, generateCarouselPlan, startConsultantChat, startConciergeChat } from './services/geminiService';
 import JSZip from 'jszip';
 import { ART_STYLES, SIZES } from './constants';
-import { applyLogoOverlay, base64ToBlob, prepareImageForOutpainting, renderTextToImage, resizeAndCropImage, flattenImageWithText, speak, fileToBase64 } from './utils';
+import { applyLogoOverlay, base64ToBlob, prepareImageForOutpainting, renderTextToImage, resizeAndCropImage, flattenImageWithText, speak } from './utils';
 import { useVoiceAgent } from './hooks/useVoiceAgent';
 
 import FunctionCard from './components/ui/FunctionCard';
@@ -25,6 +25,7 @@ import MaskEditor from './components/modals/MaskEditor';
 import FabricEditor from './components/editor/FabricEditor';
 import ConsultantChatPanel from './components/panels/ConsultantChatPanel';
 import ConversationalAgentPanel from './components/panels/ConversationalAgentPanel';
+import BottomNav from './components/ui/BottomNav';
 
 const compositionPlaceholders: Record<string, string[]> = {
   clothing: [
@@ -340,40 +341,13 @@ const App: React.FC = () => {
   }, [brandIdentity]);
   
   const handleStyleHover = useCallback((style: ArtStyle, event: React.MouseEvent<HTMLButtonElement>) => {
-    if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-    }
-    const target = event.currentTarget;
-    hoverTimeoutRef.current = window.setTimeout(() => {
-        if (document.body.contains(target)) {
-            const rect = target.getBoundingClientRect();
-            const tooltipWidth = 192; // w-48 -> 12rem -> 192px
-            const tooltipHeight = 192;
-            const margin = 10;
-            
-            let left = rect.right + margin;
-            if (left + tooltipWidth > window.innerWidth) {
-                left = rect.left - tooltipWidth - margin;
-            }
-
-            let top = rect.top + rect.height / 2 - tooltipHeight / 2;
-            if (top < margin) {
-                top = margin;
-            } else if (top + tooltipHeight > window.innerHeight) {
-                top = window.innerHeight - tooltipHeight - margin;
-            }
-
-            setTooltipPosition({ top, left });
-            setHoveredStyle(style);
-        }
-    }, 300);
+    // This function is kept for compatibility but the new design doesn't use hover previews.
+    return;
   }, []);
 
   const handleStyleLeave = useCallback(() => {
-      if (hoverTimeoutRef.current) {
-          clearTimeout(hoverTimeoutRef.current);
-      }
-      setHoveredStyle(null);
+    // This function is kept for compatibility but the new design doesn't use hover previews.
+    return;
   }, []);
 
 
@@ -1960,21 +1934,21 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
       </div>
   
       <div className="grid grid-cols-3 gap-2 bg-secondary-bg p-1 rounded-full mb-4 flex-shrink-0">
-        <button onClick={() => handleModeChange('create')} className={`py-2 rounded-full transition-colors font-medium ${mode === 'create' ? 'bg-gradient-to-r from-accent-start to-accent-end' : 'hover:bg-interactive-hover-bg'}`}>✨ Criar</button>
-        <button onClick={() => handleModeChange('edit')} className={`py-2 rounded-full transition-colors font-medium ${mode === 'edit' ? 'bg-gradient-to-r from-accent-start to-accent-end' : 'hover:bg-interactive-hover-bg'}`}>🖌️ Editar</button>
-        <button onClick={() => handleModeChange('ai_tools')} className={`py-2 rounded-full transition-colors font-medium ${mode === 'ai_tools' ? 'bg-gradient-to-r from-accent-start to-accent-end' : 'hover:bg-interactive-hover-bg'}`}>🧪 Ferramentas IA</button>
+        <button onClick={() => handleModeChange('create')} className={`py-2 rounded-full transition-colors font-medium ${mode === 'create' ? 'bg-gradient-to-r from-accent-start to-accent-end text-white' : 'hover:bg-interactive-hover-bg'}`}>Criar</button>
+        <button onClick={() => handleModeChange('edit')} className={`py-2 rounded-full transition-colors font-medium ${mode === 'edit' ? 'bg-gradient-to-r from-accent-start to-accent-end text-white' : 'hover:bg-interactive-hover-bg'}`}>Editar</button>
+        <button onClick={() => handleModeChange('ai_tools')} className={`py-2 rounded-full transition-colors font-medium ${mode === 'ai_tools' ? 'bg-gradient-to-r from-accent-start to-accent-end text-white' : 'hover:bg-interactive-hover-bg'}`}>Ferramentas IA</button>
       </div>
   
       <div className="flex-grow overflow-y-auto space-y-4 hide-scrollbar pb-4">
         {mode === 'create' && (
           <>
             <div className="grid grid-cols-3 gap-2">
-                <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.562L16.25 22.5l-.648-1.938a2.25 2.25 0 01-1.473-1.473L12 18.75l1.938-.648a2.25 2.25 0 011.473-1.473L17.25 15l.648 1.938a2.25 2.25 0 011.473 1.473L21 18.75l-1.938.648a2.25 2.25 0 01-1.473 1.473z" /></svg>} name="Livre" isActive={createFunction === 'free'} onClick={() => handleCreateFunctionChange('free')} />
-                <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H7.5A2.25 2.25 0 005.25 6v13.5A2.25 2.25 0 007.5 21h9a2.25 2.25 0 002.25-2.25V6A2.25 2.25 0 0016.5 3.75z" /></svg>} name="Sticker" isActive={createFunction === 'sticker'} onClick={() => handleCreateFunctionChange('sticker')} />
-                <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>} name="Personagem" isActive={createFunction === 'character'} onClick={() => handleCreateFunctionChange('character')} />
+                <FunctionCard name="Livre" isActive={createFunction === 'free'} onClick={() => handleCreateFunctionChange('free')} />
+                <FunctionCard name="Sticker" isActive={createFunction === 'sticker'} onClick={() => handleCreateFunctionChange('sticker')} />
+                <FunctionCard name="Personagem" isActive={createFunction === 'character'} onClick={() => handleCreateFunctionChange('character')} />
             </div>
             <div className="grid grid-cols-1 gap-2">
-              <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-1.832a6.01 6.01 0 000-3.836A6.01 6.01 0 0012 5.25m0 7.5a6.01 6.01 0 01-1.5-1.832a6.01 6.01 0 010-3.836A6.01 6.01 0 0112 5.25m0 7.5a6.01 6.01 0 00-1.5-1.832a6.01 6.01 0 000-3.836A6.01 6.01 0 0012 5.25M9.75 6.75l.26-1.385a2.25 2.25 0 012.24-1.865h.26a2.25 2.25 0 012.24 1.865l.26 1.385m-5.24 9.375a2.25 2.25 0 01-2.24-1.865l-.26-1.385a2.25 2.25 0 011.865-2.24h3.83a2.25 2.25 0 011.865 2.24l-.26 1.385a2.25 2.25 0 01-2.24 1.865h-1.61z" /></svg>} name="Consultor" isActive={createFunction === 'consultor'} onClick={() => handleCreateFunctionChange('consultor')} />
+              <FunctionCard name="Consultor" isActive={createFunction === 'consultor'} onClick={() => handleCreateFunctionChange('consultor')} />
             </div>
 
             {createFunction === 'text' ? (
@@ -2041,10 +2015,6 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
                     <ArtStyleSelectorPanel
                         selectedStyle={artStyle}
                         onSelectStyle={setArtStyle}
-                        isOpen={isArtStyleAccordionOpen}
-                        setIsOpen={setIsArtStyleAccordionOpen}
-                        onStyleHover={handleStyleHover}
-                        onStyleLeave={handleStyleLeave}
                     />
                 </>
             )}
@@ -2095,10 +2065,10 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
         {mode === 'edit' && (
           <>
             <div className="grid grid-cols-2 gap-2">
-                <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>} name="Editar" isActive={editFunction === 'add-remove'} onClick={() => setEditFunction('add-remove')} />
-                <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>} name="Melhorar" isActive={editFunction === 'enhance'} onClick={() => setEditFunction('enhance')} />
-                <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 017.5 0z" /></svg>} name="Fundo" isActive={editFunction === 'background'} onClick={() => setEditFunction('background')} />
-                <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>} name="Pessoa" isActive={editFunction === 'person'} onClick={() => setEditFunction('person')} />
+                <FunctionCard name="Editar" isActive={editFunction === 'add-remove'} onClick={() => setEditFunction('add-remove')} />
+                <FunctionCard name="Melhorar" isActive={editFunction === 'enhance'} onClick={() => setEditFunction('enhance')} />
+                <FunctionCard name="Fundo" isActive={editFunction === 'background'} onClick={() => setEditFunction('background')} />
+                <FunctionCard name="Pessoa" isActive={editFunction === 'person'} onClick={() => setEditFunction('person')} />
             </div>
             
             <SizeSelectorPanel
@@ -2143,10 +2113,10 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
         {mode === 'ai_tools' && (
           <>
             <div className="grid grid-cols-2 gap-2">
-                <FunctionCard icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L12 15.25l5.571-3m0 0l4.179 2.25L12 21.75 2.25 12l4.179-2.25z" /></svg>} name="Compor" isActive={editFunction === 'compose'} onClick={() => setEditFunction('compose')} />
-                <FunctionCard icon={<span>👕</span>} name="Vestuário" isActive={editFunction === 'clothing'} onClick={() => setEditFunction('clothing')} />
-                <FunctionCard icon={<span>🛋️</span>} name="Decorador Virtual" isActive={editFunction === 'decorator'} onClick={() => setEditFunction('decorator')} />
-                <FunctionCard icon={<span>🎨</span>} name="Simulador de Tatuagem" isActive={editFunction === 'tattoo'} onClick={() => setEditFunction('tattoo')} />
+                <FunctionCard name="Compor" isActive={editFunction === 'compose'} onClick={() => setEditFunction('compose')} />
+                <FunctionCard name="Vestuário" isActive={editFunction === 'clothing'} onClick={() => setEditFunction('clothing')} />
+                <FunctionCard name="Decorador Virtual" isActive={editFunction === 'decorator'} onClick={() => setEditFunction('decorator')} />
+                <FunctionCard name="Simulador de Tatuagem" isActive={editFunction === 'tattoo'} onClick={() => setEditFunction('tattoo')} />
             </div>
 
             {editFunction === 'compose' ? (
@@ -2293,41 +2263,36 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
       </div>
 
      { !(createFunction === 'consultor' || ['clothing', 'decorator', 'tattoo'].includes(editFunction as string)) && (
-      <div className="mt-4 flex flex-col gap-2 flex-shrink-0">
+      <div className="mt-auto flex flex-col gap-4 flex-shrink-0 pt-4">
         { editFunction !== 'enhance' && (
           <>
             <div className="relative">
               <textarea
-                className="w-full h-24 bg-primary-bg border border-glass-border rounded-lg p-3 pr-10 text-text-primary resize-none focus:outline-none focus:border-accent-start focus:ring-2 focus:ring-accent-start/50"
+                className="w-full h-28 bg-secondary-bg border-none rounded-lg p-4 text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent-start"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={mode === 'create' && createFunction === 'text' ? "Digite seu texto aqui..." : "Descreva sua imagem aqui..."}
+                placeholder={mode === 'create' && createFunction === 'text' ? "Digite seu texto aqui..." : "Descreva o que você quer criar..."}
               />
               <div className="absolute right-3 top-3 flex flex-col gap-2">
                   <button
                     onClick={isListening ? stopListening : startListening}
-                    className={`p-1.5 rounded-full transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-interactive-bg text-text-secondary hover:bg-interactive-hover-bg'}`}
+                    className={`p-2 rounded-full transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-interactive-bg text-text-secondary hover:bg-interactive-hover-bg'}`}
                     aria-label={isListening ? "Parar ditado" : "Usar microfone para ditar"}
                     title={isListening ? "Parar ditado" : "Usar microfone para ditar"}
                   >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8h-1a6 6 0 11-12 0H3a7.001 7.001 0 006 6.93V17H7a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07z" clipRule="evenodd" /></svg>
                   </button>
-                  <button onClick={() => openModalWithFocus(setIsPromptModalOpen)} className="p-1.5 rounded-full bg-interactive-bg text-text-secondary hover:bg-interactive-hover-bg transition-colors hidden md:block" title="Expandir" aria-label="Expandir editor de prompt">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1v4m0 0h-4m4 0l-5-5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 0h-4" />
-                    </svg>
-                  </button>
               </div>
             </div>
             {!(mode === 'create' && createFunction === 'text') && (
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                    <button onClick={() => handlePromptEnhancement('translate')} disabled={isProcessingPrompt} className="bg-interactive-bg hover:bg-interactive-hover-bg text-text-primary font-medium py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50">
+                    <button onClick={() => handlePromptEnhancement('translate')} disabled={isProcessingPrompt} className="bg-secondary-bg hover:bg-interactive-hover-bg text-text-primary font-medium py-2 px-4 rounded-full transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                     {activePromptTool === 'translate' && <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>}
-                    Traduzir prompt
+                    Traduzir para Inglês
                     </button>
-                    <button onClick={() => handlePromptEnhancement('enhance')} disabled={isProcessingPrompt} className="bg-interactive-bg hover:bg-interactive-hover-bg text-text-primary font-medium py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50">
+                    <button onClick={() => handlePromptEnhancement('enhance')} disabled={isProcessingPrompt} className="bg-secondary-bg hover:bg-interactive-hover-bg text-text-primary font-medium py-2 px-4 rounded-full transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                     {activePromptTool === 'enhance' && <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>}
-                    Melhorar
+                    Melhorar Prompt
                     </button>
                 </div>
             )}
@@ -2340,7 +2305,7 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
         <button
             onClick={handleGenerateClick}
             disabled={isLoading || isCreatingPersonProfile}
-            className="w-full bg-gradient-to-r from-accent-start to-accent-end text-white font-display font-bold py-3 px-4 rounded-full flex items-center justify-center transition-all duration-200 shadow-[0_4px_15px_rgba(162,89,255,0.2)] hover:opacity-90 hover:shadow-[0_6px_20px_rgba(162,89,255,0.3)] disabled:opacity-50 text-lg"
+            className="w-full bg-gradient-to-r from-accent-start to-accent-end text-white font-display font-bold py-4 px-4 rounded-full flex items-center justify-center transition-all duration-200 shadow-[0_4px_15px_rgba(162,89,255,0.2)] hover:opacity-90 hover:shadow-[0_6px_20px_rgba(162,89,255,0.3)] disabled:opacity-50 text-lg"
         >
             Gerar
         </button>
@@ -2535,7 +2500,7 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
     };
 
   return (
-    <main className="h-screen w-screen flex flex-col md:flex-row bg-primary-bg relative p-4 gap-4">
+    <main className="h-screen w-screen flex flex-col md:flex-row bg-primary-bg relative p-4 gap-4 pb-28 md:pb-4">
       <div className={`w-full md:w-[450px] lg:w-[500px] h-full bg-glass-bg backdrop-blur-xl border border-glass-border rounded-2xl flex-shrink-0 flex flex-col ${mobileView !== 'controls' ? 'mobile-hidden' : ''}`}>
         {renderControlPanel()}
       </div>
@@ -2657,6 +2622,13 @@ const handleRemoveClothingImage = useCallback((indexToRemove: number) => {
               onTakePhoto={() => handleTakePhotoClick('concierge')}
           />
       )}
+
+      <BottomNav
+          mode={mode}
+          onModeChange={handleModeChange}
+          onGenerateClick={handleGenerateClick}
+          isLoading={isLoading}
+      />
     </main>
   );
 };
